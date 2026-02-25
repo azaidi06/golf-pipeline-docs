@@ -16,7 +16,7 @@ const colors = {
 const TABS = [
   { id: 'core', label: 'Architecture', component: PipelineCore },
   { id: 'costs', label: 'Costs', component: PipelineCosts },
-  { id: 'gpu', label: 'GPU Tricks', component: GpuTricks },
+  { id: 'gpu', label: 'For the Nerds', component: GpuTricks },
 ];
 
 export default function App() {
