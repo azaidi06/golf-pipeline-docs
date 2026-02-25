@@ -487,7 +487,7 @@ const GpuTricks = () => {
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.02em', lineHeight: 1.3,
           }}>
-            GPU Tricks: 3x Faster ML Inference by Using Hardware You Already Pay For
+            GPU Tricks: 3x Faster ML Inference
           </h1>
           <p style={{ color: colors.textDim, fontSize: '14px', margin: '10px 0 0 0', lineHeight: 1.6 }}>
             A three-phase optimization of a video analysis pipeline — from architecture cleanup (NVENC) to hardware decode (NVDEC) to compiler tricks (torch.compile) — cutting end-to-end time from 18 minutes to 6 and cost per video from $0.14 to $0.04.
