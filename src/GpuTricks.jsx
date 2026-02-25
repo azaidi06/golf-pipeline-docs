@@ -481,11 +481,6 @@ const GpuTricks = () => {
           transform: mounted ? 'translateY(0)' : 'translateY(16px)',
           transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            {['GPU', 'Infrastructure', 'Optimization', 'PyTorch'].map(tag => (
-              <span key={tag} style={{ fontSize: '10px', fontWeight: 600, color: colors.accent, background: `${colors.accent}12`, padding: '3px 10px', borderRadius: '10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{tag}</span>
-            ))}
-          </div>
           <h1 style={{
             fontSize: '28px', fontWeight: 700, margin: '12px 0 0 0',
             background: `linear-gradient(135deg, ${colors.text}, ${colors.textMuted})`,
@@ -577,23 +572,10 @@ const GpuTricks = () => {
             </Prose>
           </div>
           <Prose>
-            <P><Strong>The Real Bottleneck</Strong> — profiled per-batch timings on g6.2xlarge (L4 GPU), batch size 32:</P>
+            <P><Strong>The Real Bottleneck</Strong> — GPU inference consumed 494ms out of 552ms per batch — <Strong color={colors.red}>90% of main thread time</Strong>.</P>
           </Prose>
-          <CodeBlock title="Per-batch profiling (batch=32)">
-{`Background thread (NVDEC decode + preprocess):
-  ffmpeg h264_cuvid decode x32:   ~100ms
-  preprocess (resize+pad+norm):   ~100ms
-  TOTAL:                          ~200ms    ← finishes fast, waits for main
-
-Main thread (GPU inference + CPU glue):
-  RTMDet inference:               ~236ms    (GPU)
-  warpAffine x32:                  ~14ms    (CPU)
-  ViTPose inference:              ~258ms    (GPU)
-  Heatmap decode (dark-UDP):       ~43ms    (CPU)
-  TOTAL:                          ~552ms    ← the actual bottleneck`}
-          </CodeBlock>
           <Prose>
-            <P><Strong>GPU inference consumed 494ms out of 552ms per batch — 90% of main thread time.</Strong> The GPU wasn't 16% utilized. It was 90% utilized. The original estimate was wrong because it conflated <Mono>nvidia-smi</Mono> utilization (which reports duty cycle, not throughput) with actual batch timing.</P>
+            <P> The GPU wasn't 16% utilized. It was 90% utilized. The original estimate was wrong because it conflated <Mono>nvidia-smi</Mono> utilization (which reports duty cycle, not throughput) with actual batch timing.</P>
             <P>With the overlap design, effective throughput is <Mono>max(background, main)</Mono>:</P>
           </Prose>
           <div style={{ margin: '12px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -765,21 +747,6 @@ Measured: 57.5 fps (queue sync, warmup overhead eat the rest)`}
               </div>
             ))}
           </div>
-          <CodeBlock title="Quick GPU engine utilization check">
-{`# Shows CUDA, NVENC, NVDEC utilization per second
-nvidia-smi dmon -s u -d 1
-
-# Per-layer profiling to find the actual bottleneck
-python -c "
-import torch
-with torch.profiler.profile(activities=[
-    torch.profiler.ProfilerActivity.CPU,
-    torch.profiler.ProfilerActivity.CUDA,
-]) as prof:
-    model(input_batch)
-print(prof.key_averages().table(sort_by='cuda_time_total', row_limit=10))
-"`}
-          </CodeBlock>
         </CollapsibleCard>
 
       </div>
