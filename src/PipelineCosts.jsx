@@ -374,7 +374,7 @@ const PipelineCosts = () => {
             </h1>
           </div>
           <p style={{ color: colors.textDim, fontSize: '14px', margin: 0, paddingLeft: '48px' }}>
-            Golf swing processing — Erlang-C fleet model (overprovision a bit so random arrival spikes don't cause SLA violations)
+            Erlang-C fleet model — overprovision a bit so random arrival spikes don't cause SLA violations
           </p>
         </div>
 
