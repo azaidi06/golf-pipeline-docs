@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PipelineCore from './PipelineCore';
 import PipelineCosts from './PipelineCosts';
+import GpuTricks from './GpuTricks';
 
 const colors = {
   bg: '#0a0f1a',
@@ -15,6 +16,7 @@ const colors = {
 const TABS = [
   { id: 'core', label: 'Architecture', component: PipelineCore },
   { id: 'costs', label: 'Costs', component: PipelineCosts },
+  { id: 'gpu', label: 'GPU Tricks', component: GpuTricks },
 ];
 
 export default function App() {
