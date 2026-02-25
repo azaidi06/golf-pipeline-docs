@@ -499,7 +499,7 @@ const GpuTricks = () => {
           cardStyleOverride={{ background: `linear-gradient(135deg, ${colors.card}, ${colors.bg})` }}>
           <Prose>
             <P>Modern NVIDIA GPUs ship with <Strong>three independent hardware engines</Strong> — CUDA cores, NVDEC (hardware video decoder), and NVENC (hardware video encoder). They're separate silicon blocks on the die: using one doesn't steal cycles from the others. Most ML pipelines only touch CUDA, leaving the other two completely idle.</P>
-            <P>This post walks through three phases of optimizing a real pipeline — a golf swing analysis system that takes raw iPhone video through pose estimation on an EC2 GPU instance. Each phase targeted a different bottleneck, and the profiling results repeatedly contradicted initial assumptions about where time was being spent.</P>
+            <P>This post walks through three phases of optimizing a real pipeline — a golf swing analysis system that takes raw video through pose estimation on an EC2 GPU instance. Each phase targeted a different bottleneck, and the profiling results repeatedly contradicted initial assumptions about where time was being spent.</P>
           </Prose>
           <Table
             headers={['Phase', 'What changed', 'Wall time', 'Speedup']}
@@ -509,7 +509,7 @@ const GpuTricks = () => {
               ['Phase 2', 'NVDEC decode + threaded overlap', '~9 min', '2.0x'],
               ['Phase 3', 'torch.compile (inductor)', '~6 min', '3.0x'],
             ]}
-            caption="End-to-end wall time for a 5-minute 60fps iPhone video (~19,000 frames)"
+            caption="End-to-end wall time for a 5-minute 60fps video (~19,000 frames)"
             highlight={3}
           />
           <Prose>
@@ -597,13 +597,7 @@ const GpuTricks = () => {
         {/* ─── PHASE 3 ─── */}
         <CollapsibleCard title="Phase 3: torch.compile — Another 1.77x for Free" sub="~9 min → ~6 min (3.0x)" icon="⚡" defaultOpen={true}>
           <Prose>
-            <P>With the GPU confirmed as the bottleneck, the path forward was reducing inference time. <Mono>torch.compile</Mono> with the <Strong>inductor backend</Strong> is PyTorch's built-in graph compiler — it traces the model, fuses operations, and generates optimized Triton kernels. One function call, no code changes:</P>
-          </Prose>
-          <CodeBlock title="Two lines. That's it.">
-{`det_model.backbone = torch.compile(det_model.backbone)
-pose_model.backbone = torch.compile(pose_model.backbone)`}
-          </CodeBlock>
-          <Prose>
+            <P>With the GPU confirmed as the bottleneck, the path forward was reducing inference time. <Mono>torch.compile</Mono> with the <Strong>inductor backend</Strong> is PyTorch's built-in graph compiler — it traces the model, fuses operations, and generates optimized Triton kernels.</P>
             <P><Strong>Conv nets love compilers more than transformers</Strong> — the two models responded very differently:</P>
           </Prose>
           <Table
@@ -719,7 +713,7 @@ Measured: 57.5 fps (queue sync, warmup overhead eat the rest)`}
               ['Data transferred', '957 MB', '433 MB', '433 MB', '433 MB'],
               ['Services', '2', '1', '1', '1'],
             ]}
-            caption="Complete optimization timeline for a 5-min 60fps iPhone video"
+            caption="Complete optimization timeline for a 5-min 60fps video"
             highlight={5}
           />
           <Prose>

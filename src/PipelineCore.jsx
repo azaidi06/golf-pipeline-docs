@@ -294,7 +294,7 @@ const PipelineCore = () => {
               type="s3"
               title="S3: golf-swing-data"
               subtitle="{golfer}/raw/"
-              details="Raw .MOV (iPhone HEVC 10-bit VFR) or .mp4 (Android)"
+              details="Raw .MOV (HEVC 10-bit VFR) or .mp4"
             />
             <ArrowDown label="S3 event (.MOV / .mp4)" color={colors.green} />
             <Node
@@ -364,7 +364,7 @@ const PipelineCore = () => {
             <Node
               type="lambda"
               title="Lambda: swing_detect"
-              details="~13s signal processing. Detects backswings & contacts via wrist trajectory analysis."
+              details="~13s signal processing. Detects backswings & contacts."
             />
 
             {/* Dual output */}
