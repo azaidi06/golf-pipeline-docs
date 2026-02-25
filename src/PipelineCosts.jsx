@@ -48,30 +48,44 @@ const SectionTitle = ({ children, sub }) => (
   </div>
 );
 
-const Pill = ({ label, value, color = 'gray' }) => (
-  <div className={`bg-${color}-50 border border-${color}-200 rounded-lg px-4 py-2 text-center`}>
-    <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-    <p className={`text-lg font-bold text-${color}-700`}>{value}</p>
-  </div>
-);
+const COLOR_MAP = {
+  gray:   { bg50: 'bg-gray-50',   border200: 'border-gray-200',   text700: 'text-gray-700',   bg500: 'bg-gray-500' },
+  blue:   { bg50: 'bg-blue-50',   border200: 'border-blue-200',   text700: 'text-blue-700',   bg500: 'bg-blue-500' },
+  purple: { bg50: 'bg-purple-50', border200: 'border-purple-200', text700: 'text-purple-700', bg500: 'bg-purple-500' },
+  green:  { bg50: 'bg-green-50',  border200: 'border-green-200',  text700: 'text-green-700',  bg500: 'bg-green-500' },
+  orange: { bg50: 'bg-orange-50', border200: 'border-orange-200', text700: 'text-orange-700', bg500: 'bg-orange-500' },
+};
 
-const Bar = ({ pct, color = 'purple' }) => (
-  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-    <div
-      className={`bg-${color}-500 h-full rounded-full transition-all`}
-      style={{ width: `${Math.min(pct, 100)}%` }}
-    />
-  </div>
-);
+const Pill = ({ label, value, color = 'gray' }) => {
+  const c = COLOR_MAP[color] || COLOR_MAP.gray;
+  return (
+    <div className={`${c.bg50} border ${c.border200} rounded-lg px-4 py-2 text-center`}>
+      <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
+      <p className={`text-lg font-bold ${c.text700}`}>{value}</p>
+    </div>
+  );
+};
+
+const Bar = ({ pct, color = 'purple' }) => {
+  const c = COLOR_MAP[color] || COLOR_MAP.purple;
+  return (
+    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+      <div
+        className={`${c.bg500} h-full rounded-full transition-all`}
+        style={{ width: `${Math.min(pct, 100)}%` }}
+      />
+    </div>
+  );
+};
 
 const Th = ({ children, align = 'left' }) => (
-  <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-${align} border-b border-gray-200`}>
+  <th className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider ${align === 'right' ? 'text-right' : 'text-left'} border-b border-gray-200`}>
     {children}
   </th>
 );
 
 const Td = ({ children, bold, highlight, align = 'left' }) => (
-  <td className={`px-4 py-3 text-sm text-${align} ${bold ? 'font-bold text-gray-900' : 'text-gray-700'} ${highlight ? 'bg-green-50' : ''}`}>
+  <td className={`px-4 py-3 text-sm ${align === 'right' ? 'text-right' : 'text-left'} ${bold ? 'font-bold text-gray-900' : 'text-gray-700'} ${highlight ? 'bg-green-50' : ''}`}>
     {children}
   </td>
 );
