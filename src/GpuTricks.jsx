@@ -544,11 +544,6 @@ const GpuTricks = () => {
           <Callout color={colors.green}>
             NVENC is a fixed-function ASIC on the GPU die. It encodes video in hardware, completely independent of CUDA cores. Your ML inference runs on CUDA; your transcode runs on NVENC; they don't compete. It's free performance on hardware you're already renting.
           </Callout>
-          <CodeBlock title="ffmpeg NVENC transcode command">
-{`ffmpeg -hwaccel cuda -i input.MOV \\
-  -c:v h264_nvenc -preset p4 -pix_fmt yuv420p \\
-  -vsync cfr output.mp4`}
-          </CodeBlock>
           <Callout color={colors.orange}>
             <Strong color={colors.orange}>Result: ~18 min → ~12 min</Strong> (33% faster, 55% less data transfer, one fewer service).
           </Callout>
