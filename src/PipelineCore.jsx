@@ -385,7 +385,7 @@ const PipelineCore = () => {
         <CollapsibleCard
           title="Hand & Score Finder"
           sub="Visualizations, finger predictions & notifications"
-          icon="🖐️"
+          icon="✌️"
           defaultOpen={true}
         >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
