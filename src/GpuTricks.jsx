@@ -39,7 +39,7 @@ const Chevron = ({ open, color = colors.textDim }) => (
 
 /* ── Collapsible Card ─────────────────────────────────────────── */
 
-const CollapsibleCard = ({ title, sub, icon, children, defaultOpen = true, cardStyleOverride }) => {
+const CollapsibleCard = ({ title, sub, icon, children, defaultOpen = false, cardStyleOverride }) => {
   const [open, setOpen] = useState(defaultOpen);
   const contentRef = useRef(null);
   const [contentHeight, setContentHeight] = useState(4000);
@@ -487,15 +487,20 @@ const GpuTricks = () => {
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.02em', lineHeight: 1.3,
           }}>
-            GPU Tricks: 3x Faster ML Inference
+            3x Faster with GPU Tricks
           </h1>
           <p style={{ color: colors.textDim, fontSize: '14px', margin: '10px 0 0 0', lineHeight: 1.6 }}>
-            A three-phase optimization of a video analysis pipeline — from architecture cleanup (NVENC) to hardware decode (NVDEC) to compiler tricks (torch.compile) — cutting end-to-end time from 18 minutes to 6 and cost per video from $0.14 to $0.04.
+            Three optimizations that cut video processing from 18 min to 6 min ($0.14 → $0.04/video):
           </p>
+          <ol style={{ color: colors.textMuted, fontSize: '13px', margin: '8px 0 0 0', paddingLeft: '20px', lineHeight: 1.8 }}>
+            <li><span style={{ color: colors.orange, fontWeight: 600 }}>NVENC</span> — merge services, hardware transcode</li>
+            <li><span style={{ color: colors.accent, fontWeight: 600 }}>NVDEC</span> — hardware decode, threaded overlap</li>
+            <li><span style={{ color: colors.green, fontWeight: 600 }}>torch.compile</span> — fused GPU kernels</li>
+          </ol>
         </div>
 
         {/* ─── THE PROBLEM ─── */}
-        <CollapsibleCard title="The Problem" icon="🎯" defaultOpen={true}
+        <CollapsibleCard title="The Problem" icon="🎯" defaultOpen={false}
           cardStyleOverride={{ background: `linear-gradient(135deg, ${colors.card}, ${colors.bg})` }}>
           <Prose>
             <P>Modern NVIDIA GPUs ship with <Strong>three independent hardware engines</Strong> — CUDA cores, NVDEC (hardware video decoder), and NVENC (hardware video encoder). They're separate silicon blocks on the die: using one doesn't steal cycles from the others. Most ML pipelines only touch CUDA, leaving the other two completely idle.</P>
@@ -518,7 +523,7 @@ const GpuTricks = () => {
         </CollapsibleCard>
 
         {/* ─── PHASE 1 ─── */}
-        <CollapsibleCard title="Phase 1: Merge Services, Activate NVENC" sub="~18 min → ~12 min (1.5x)" icon="🔧" defaultOpen={true}>
+        <CollapsibleCard title="Phase 1: Merge Services, Activate NVENC" sub="~18 min → ~12 min (1.5x)" icon="🔧" defaultOpen={false}>
           <Prose>
             <P>The original architecture used <Strong>two services</Strong>: an AWS Lambda function for CPU transcoding (HEVC → H.264) and a separate EC2 GPU instance for pose estimation. Every video crossed the network three times:</P>
           </Prose>
@@ -549,13 +554,8 @@ const GpuTricks = () => {
           </Callout>
         </CollapsibleCard>
 
-        {/* ─── INTERACTIVE VIZ ─── */}
-        <CollapsibleCard title="Interactive Pipeline Visualization" sub="Toggle between phases to see architecture changes" icon="🔬" defaultOpen={true}>
-          <PipelineViz />
-        </CollapsibleCard>
-
         {/* ─── PHASE 2 ─── */}
-        <CollapsibleCard title="Phase 2: NVDEC and the Profiling Plot Twist" sub="~12 min → ~9 min (2.0x)" icon="📥" defaultOpen={true}>
+        <CollapsibleCard title="Phase 2: NVDEC and the Profiling Plot Twist" sub="~12 min → ~9 min (2.0x)" icon="📥" defaultOpen={false}>
           <Prose>
             <P>With transcoding handled, the pipeline bottleneck was clearly the labeling step: ~10 minutes to run RTMDet (person detection) + ViTPose-Huge (pose estimation) over 19,000 frames. The labeler uses a <Strong>two-thread overlap design</Strong>:</P>
             <P>The <Strong>background thread</Strong> decodes video frames and preprocesses them into batches of 32. The <Strong>main thread</Strong> runs GPU inference (RTMDet → crop → ViTPose → heatmap decode). They communicate through a <Mono>queue.Queue(maxsize=2)</Mono> — the background thread stays one batch ahead so the GPU never waits for data.</P>
@@ -590,7 +590,7 @@ const GpuTricks = () => {
         </CollapsibleCard>
 
         {/* ─── PHASE 3 ─── */}
-        <CollapsibleCard title="Phase 3: torch.compile — Another 1.77x for Free" sub="~9 min → ~6 min (3.0x)" icon="⚡" defaultOpen={true}>
+        <CollapsibleCard title="Phase 3: torch.compile — Another 1.77x for Free" sub="~9 min → ~6 min (3.0x)" icon="⚡" defaultOpen={false}>
           <Prose>
             <P>With the GPU confirmed as the bottleneck, the path forward was reducing inference time. <Mono>torch.compile</Mono> with the <Strong>inductor backend</Strong> is PyTorch's built-in graph compiler — it traces the model, fuses operations, and generates optimized Triton kernels.</P>
             <P><Strong>Conv nets love compilers more than transformers</Strong> — the two models responded very differently:</P>
@@ -636,8 +636,13 @@ Measured: 57.5 fps (queue sync, warmup overhead eat the rest)`}
           </Callout>
         </CollapsibleCard>
 
+        {/* ─── INTERACTIVE VIZ ─── */}
+        <CollapsibleCard title="Interactive Pipeline Visualization" sub="Toggle between phases to see architecture changes" icon="🔬" defaultOpen={false}>
+          <PipelineViz />
+        </CollapsibleCard>
+
         {/* ─── DEAD END ─── */}
-        <CollapsibleCard title="Dead End: Why TensorRT Made Things Worse" sub="The BW/TFLOP ratio explains everything" icon="🚫" defaultOpen={true}
+        <CollapsibleCard title="Dead End: Why TensorRT Made Things Worse" sub="The BW/TFLOP ratio explains everything" icon="🚫" defaultOpen={false}
           cardStyleOverride={{ background: `linear-gradient(135deg, ${colors.red}06, ${colors.card})`, border: `1px solid ${colors.red}18` }}>
           <Prose>
             <P>The natural next step after <Mono>torch.compile</Mono> was TensorRT — NVIDIA's dedicated inference optimizer. <Mono>torch_tensorrt</Mono> compiles models to TRT engines with FP16 quantization, typically delivering large speedups on NVIDIA hardware. On the L4, it was <Strong color={colors.red}>slower</Strong>:</P>
@@ -683,7 +688,7 @@ Measured: 57.5 fps (queue sync, warmup overhead eat the rest)`}
         </CollapsibleCard>
 
         {/* ─── FULL JOURNEY ─── */}
-        <CollapsibleCard title="The Full Journey" sub="Complete optimization timeline" icon="🗺️" defaultOpen={true}>
+        <CollapsibleCard title="The Full Journey" sub="Complete optimization timeline" icon="🗺️" defaultOpen={false}>
           <CodeBlock>
 {`Phase 0    Phase 1         Phase 2         Phase 3
 ~18 min    ~12 min         ~9 min          ~6 min
@@ -717,7 +722,7 @@ Measured: 57.5 fps (queue sync, warmup overhead eat the rest)`}
         </CollapsibleCard>
 
         {/* ─── KEY TAKEAWAYS ─── */}
-        <CollapsibleCard title="Key Takeaways" icon="💡" defaultOpen={true}
+        <CollapsibleCard title="Key Takeaways" icon="💡" defaultOpen={false}
           cardStyleOverride={{ background: `linear-gradient(135deg, ${colors.amber}08, ${colors.amber}03)`, border: `1px solid ${colors.amber}20`, marginBottom: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
