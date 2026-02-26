@@ -462,27 +462,19 @@ const PipelineViz = () => {
    ══════════════════════════════════════════════════════════════════ */
 
 const GpuTricks = () => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   return (
     <div style={{
-      minHeight: '100vh', background: colors.bg,
       fontFamily: "'DM Sans', 'SF Pro Display', -apple-system, sans-serif",
-      color: colors.text, padding: '40px 24px',
+      color: colors.text, padding: '40px 24px 40px',
     }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
 
         {/* ─── HEADER ─── */}
-        <div style={{
-          marginBottom: '40px', opacity: mounted ? 1 : 0,
-          transform: mounted ? 'translateY(0)' : 'translateY(16px)',
-          transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}>
+        <div style={{ marginBottom: '40px' }}>
           <h1 style={{
-            fontSize: '28px', fontWeight: 700, margin: '12px 0 0 0',
+            fontSize: '28px', fontWeight: 700, margin: '0 0 0 0',
             background: `linear-gradient(135deg, ${colors.text}, ${colors.textMuted})`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.02em', lineHeight: 1.3,

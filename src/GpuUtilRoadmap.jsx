@@ -347,14 +347,14 @@ export default function GpuUtilRoadmap() {
   const savedSeconds = Math.round(currentTime - activeTime);
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 16px 80px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '20px 16px 80px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 800, color: colors.text, margin: 0, letterSpacing: '-0.02em', fontFamily: "'DM Sans', -apple-system, sans-serif" }}>
-          GPU Utilization Roadmap
+          Closing the GPU Idle Gaps
         </h1>
         <p style={{ fontSize: '15px', color: colors.textDim, margin: '6px 0 0 0', lineHeight: 1.5 }}>
-          Closing GPU idle gaps to cut 60-80s off every 5-min video
+          The pipeline runs at 57.5 fps with 38% GPU idle time per batch. These optimizations target the CPU work that keeps the GPU waiting.
         </p>
       </div>
 
