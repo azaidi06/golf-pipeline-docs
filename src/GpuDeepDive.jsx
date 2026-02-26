@@ -14,7 +14,7 @@ const colors = {
 };
 
 const sections = [
-  { id: 'journey', label: 'The Journey', sub: '18 min → 6 min', component: GpuTricks },
+  { id: 'journey', label: '\uD83D\uDD25 GPU', sub: '18 min \u2192 6 min', component: GpuTricks },
   { id: 'next', label: "What's Next", sub: '6 min → 4 min', component: GpuUtilRoadmap },
 ];
 
