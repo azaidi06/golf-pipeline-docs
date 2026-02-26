@@ -256,7 +256,7 @@ const PipelineCore = () => {
             </h1>
           </div>
           <p style={{ color: colors.textDim, fontSize: '14px', margin: 0, paddingLeft: '48px' }}>
-            S3 upload through swing detection, post-processing, and analysis
+            S3 upload through landmark detection, hand/score finding, and analysis
           </p>
         </div>
 
@@ -352,10 +352,10 @@ const PipelineCore = () => {
           </div>
         </CollapsibleCard>
 
-        {/* ─── DETECTION & POST-PROCESSING ─── */}
+        {/* ─── SWING LANDMARK DETECTION ─── */}
         <CollapsibleCard
-          title="Detection & Post-Processing"
-          sub="Swing detection → visualizations → notifications"
+          title="Swing Landmark Detection"
+          sub="Signal processing on keypoints → backswing & contact frames"
           icon="🎯"
           defaultOpen={true}
         >
@@ -378,7 +378,17 @@ const PipelineCore = () => {
                 <Node type="s3" title="S3: /detection" />
               </div>
             </div>
+          </div>
+        </CollapsibleCard>
 
+        {/* ─── HAND & SCORE FINDER ─── */}
+        <CollapsibleCard
+          title="Hand & Score Finder"
+          sub="Visualizations, finger predictions & notifications"
+          icon="🖐️"
+          defaultOpen={true}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
             <ArrowDown label="S3 event (.json)" color={colors.amber} />
             <Node
               type="lambda"
