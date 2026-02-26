@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PipelineCore from './PipelineCore';
 import PipelineCosts from './PipelineCosts';
 import GpuTricks from './GpuTricks';
+import GpuUtilRoadmap from './GpuUtilRoadmap';
 
 const colors = {
   bg: '#0a0f1a',
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'core', label: 'Architecture', component: PipelineCore },
   { id: 'costs', label: 'Costs', component: PipelineCosts },
   { id: 'gpu', label: 'For the Nerds', component: GpuTricks },
+  { id: 'gpu-util', label: 'GPU Roadmap', component: GpuUtilRoadmap },
 ];
 
 export default function App() {
