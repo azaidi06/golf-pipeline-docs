@@ -264,7 +264,7 @@ const PipelineCore = () => {
         <CollapsibleCard
           title="Pipeline Overview"
           sub="End-to-end golf swing processing"
-          icon="🔭"
+          icon="🗺️"
           defaultOpen={true}
           cardStyleOverride={{ background: `linear-gradient(135deg, ${colors.card}, ${colors.bg})` }}
         >
@@ -309,7 +309,7 @@ const PipelineCore = () => {
         <CollapsibleCard
           title="GPU Processing"
           sub="EC2 spot worker — transcode + pose estimation"
-          icon="🖥️"
+          icon="🚂"
           defaultOpen={true}
           badge="g6.2xlarge"
         >
