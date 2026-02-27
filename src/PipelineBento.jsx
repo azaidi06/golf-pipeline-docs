@@ -36,30 +36,47 @@ const FlowConnector = ({ color = colors.textDim, label }) => {
   return (
     <div ref={ref} style={{
       gridColumn: '1 / -1',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      gap: '8px', padding: '2px 0',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: '0', padding: '20px 0',
       opacity: inView ? 1 : 0,
       transition: `opacity 0.6s ${easing}`,
     }}>
-      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${color}25)` }} />
-      {[0, 1, 2].map(i => (
-        <div key={i} style={{
-          width: '4px', height: '4px', borderRadius: '50%', background: color,
-          animation: inView ? `bento-flow-pulse 2s ${easing} ${i * 0.35}s infinite` : 'none',
-        }} />
-      ))}
-      {label && <span style={{
-        fontSize: '9px', fontWeight: 600, color: `${color}99`,
-        textTransform: 'uppercase', letterSpacing: '0.08em',
-        fontFamily: "'JetBrains Mono', monospace",
-      }}>{label}</span>}
-      {[0, 1, 2].map(i => (
-        <div key={i + 3} style={{
-          width: '4px', height: '4px', borderRadius: '50%', background: color,
-          animation: inView ? `bento-flow-pulse 2s ${easing} ${(i + 3) * 0.35}s infinite` : 'none',
-        }} />
-      ))}
-      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to left, transparent, ${color}25)` }} />
+      {/* Top gradient rule */}
+      <div style={{
+        width: '100%', height: '1px',
+        background: `linear-gradient(to right, transparent 5%, ${color}30 30%, ${color}30 70%, transparent 95%)`,
+      }} />
+
+      {/* Dots + label row */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '8px', padding: '14px 0',
+      }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: '5px', height: '5px', borderRadius: '50%', background: color,
+            animation: inView ? `bento-flow-pulse 2s ${easing} ${i * 0.35}s infinite` : 'none',
+          }} />
+        ))}
+        {label && <span style={{
+          fontSize: '10px', fontWeight: 600, color: `${color}bb`,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          fontFamily: "'JetBrains Mono', monospace",
+          padding: '0 4px',
+        }}>{label}</span>}
+        {[0, 1, 2].map(i => (
+          <div key={i + 3} style={{
+            width: '5px', height: '5px', borderRadius: '50%', background: color,
+            animation: inView ? `bento-flow-pulse 2s ${easing} ${(i + 3) * 0.35}s infinite` : 'none',
+          }} />
+        ))}
+      </div>
+
+      {/* Bottom gradient rule */}
+      <div style={{
+        width: '100%', height: '1px',
+        background: `linear-gradient(to right, transparent 5%, ${color}30 30%, ${color}30 70%, transparent 95%)`,
+      }} />
     </div>
   );
 };
