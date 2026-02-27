@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import GpuTricks from './GpuTricks';
 import GpuUtilRoadmap from './GpuUtilRoadmap';
+import ParallelizationRoadmap from './ParallelizationRoadmap';
 
 const colors = {
   bg: '#0a0f1a',
@@ -8,14 +9,16 @@ const colors = {
   cardBorder: '#1e293b',
   accent: '#60a5fa',
   green: '#34d399',
+  cyan: '#22d3ee',
   text: '#e2e8f0',
   textMuted: '#94a3b8',
   textDim: '#64748b',
 };
 
 const sections = [
-  { id: 'journey', label: 'GPU Optimization', sub: '18 min \u2192 6 min', component: GpuTricks },
-  { id: 'next', label: "What's Next", sub: '6 min → 4 min', component: GpuUtilRoadmap },
+  { id: 'journey', label: 'GPU Optimization', sub: '18 min \u2192 6 min', component: GpuTricks, color: colors.accent },
+  { id: 'next', label: "What's Next", sub: '6 min → 4 min', component: GpuUtilRoadmap, color: colors.green },
+  { id: 'scaling', label: 'Scaling', sub: '1 → N instances', component: ParallelizationRoadmap, color: colors.cyan },
 ];
 
 export default function GpuDeepDive() {
@@ -38,10 +41,8 @@ export default function GpuDeepDive() {
                 style={{
                   padding: '12px 20px',
                   borderRadius: '12px',
-                  border: active === s.id ? `1px solid ${active === 'journey' ? colors.accent : colors.green}40` : `1px solid ${colors.cardBorder}`,
-                  background: active === s.id
-                    ? `${active === 'journey' ? colors.accent : colors.green}10`
-                    : colors.card,
+                  border: active === s.id ? `1px solid ${s.color}40` : `1px solid ${colors.cardBorder}`,
+                  background: active === s.id ? `${s.color}10` : colors.card,
                   cursor: 'pointer',
                   transition: 'all 0.25s ease',
                   outline: 'none',
@@ -52,9 +53,7 @@ export default function GpuDeepDive() {
                   fontSize: '14px',
                   fontWeight: 700,
                   fontFamily: "'DM Sans', -apple-system, sans-serif",
-                  color: active === s.id
-                    ? (s.id === 'journey' ? colors.accent : colors.green)
-                    : colors.textDim,
+                  color: active === s.id ? s.color : colors.textDim,
                   letterSpacing: '-0.01em',
                 }}>
                   {s.label}
