@@ -2,14 +2,12 @@ import React, { useState, lazy, Suspense } from 'react';
 import { colors } from './pipelineData';
 
 const PipelineClassic = lazy(() => import('./PipelineClassic'));
-const PipelineFlow = lazy(() => import('./PipelineFlow'));
 const PipelineBento = lazy(() => import('./PipelineBento'));
 const PipelineScroll = lazy(() => import('./PipelineScroll'));
 const PipelineCombined = lazy(() => import('./PipelineCombined'));
 
 const VARIANTS = [
   { id: 'classic', label: 'Classic', component: PipelineClassic },
-  { id: 'flow', label: 'Flow', component: PipelineFlow },
   { id: 'bento', label: 'Bento', component: PipelineBento },
   { id: 'scroll', label: 'Scroll', component: PipelineScroll },
   { id: 'combined', label: 'Combined', component: PipelineCombined },

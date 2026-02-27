@@ -5,54 +5,139 @@ import useInView from './hooks/useInView';
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
+/* ── Keyframes (injected once) ───────────────────────────────── */
+const BentoStyles = () => (
+  <style>{`
+    @keyframes bento-border-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes bento-flow-pulse {
+      0%, 100% { opacity: 0.15; transform: scale(0.7); }
+      50% { opacity: 0.85; transform: scale(1.3); }
+    }
+  `}</style>
+);
+
+/* ── Dot-Grid Background ─────────────────────────────────────── */
+const DotGrid = () => (
+  <div style={{
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(circle, ${colors.textDim}15 1px, transparent 1px)`,
+    backgroundSize: '32px 32px',
+    maskImage: 'radial-gradient(ellipse 80% 50% at 50% 35%, black 15%, transparent 65%)',
+    WebkitMaskImage: 'radial-gradient(ellipse 80% 50% at 50% 35%, black 15%, transparent 65%)',
+  }} />
+);
+
+/* ── Flow Connector (between tile groups) ────────────────────── */
+const FlowConnector = ({ color = colors.textDim, label }) => {
+  const [ref, inView] = useInView({ threshold: 0.3 });
+  return (
+    <div ref={ref} style={{
+      gridColumn: '1 / -1',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      gap: '8px', padding: '2px 0',
+      opacity: inView ? 1 : 0,
+      transition: `opacity 0.6s ${easing}`,
+    }}>
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${color}25)` }} />
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{
+          width: '4px', height: '4px', borderRadius: '50%', background: color,
+          animation: inView ? `bento-flow-pulse 2s ${easing} ${i * 0.35}s infinite` : 'none',
+        }} />
+      ))}
+      {label && <span style={{
+        fontSize: '9px', fontWeight: 600, color: `${color}99`,
+        textTransform: 'uppercase', letterSpacing: '0.08em',
+        fontFamily: "'JetBrains Mono', monospace",
+      }}>{label}</span>}
+      {[0, 1, 2].map(i => (
+        <div key={i + 3} style={{
+          width: '4px', height: '4px', borderRadius: '50%', background: color,
+          animation: inView ? `bento-flow-pulse 2s ${easing} ${(i + 3) * 0.35}s infinite` : 'none',
+        }} />
+      ))}
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to left, transparent, ${color}25)` }} />
+    </div>
+  );
+};
+
 /* ── Bento Tile ─────────────────────────────────────────────── */
-const BentoTile = ({ children, span = 1, rowSpan = 1, color = colors.accent, glowOnHover = true, style: extraStyle }) => {
+const BentoTile = ({ children, span = 1, rowSpan = 1, color = colors.accent, glowOnHover = true, style: extraStyle, delay = 0 }) => {
   const [hovered, setHovered] = useState(false);
   const [ref, inView] = useInView({ threshold: 0.1 });
 
   return (
-    <div
-      ref={ref}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        gridColumn: `span ${span}`,
-        gridRow: `span ${rowSpan}`,
-        background: colors.card,
-        border: `1px solid ${hovered && glowOnHover ? color + '40' : colors.cardBorder}`,
-        borderRadius: '16px',
-        padding: '24px',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: `all 0.35s ${easing}`,
-        transform: hovered ? 'scale(1.02)' : 'scale(1)',
-        boxShadow: hovered ? `0 8px 32px ${color}15` : 'none',
-        opacity: inView ? 1 : 0,
-        ...extraStyle,
-      }}
-    >
-      {/* Subtle gradient glow */}
-      {glowOnHover && (
+    /* Entrance wrapper — handles fade + slide-up with stagger delay */
+    <div ref={ref} style={{
+      gridColumn: `span ${span}`,
+      gridRow: `span ${rowSpan}`,
+      display: 'flex',
+      opacity: inView ? 1 : 0,
+      transform: inView ? 'translateY(0)' : 'translateY(16px)',
+      transition: `opacity 0.6s ${easing} ${delay}ms, transform 0.6s ${easing} ${delay}ms`,
+    }}>
+      {/* Hover wrapper — handles scale + animated border */}
+      <div
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          flex: 1,
+          display: 'flex',
+          position: 'relative',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          background: colors.cardBorder,
+          transition: `transform 0.35s ${easing}, box-shadow 0.35s ${easing}`,
+          transform: hovered ? 'scale(1.015)' : 'scale(1)',
+          boxShadow: hovered ? `0 8px 32px ${color}20` : 'none',
+        }}
+      >
+        {/* Rotating conic-gradient — visible on hover as the "border" */}
+        {glowOnHover && (
+          <div style={{
+            position: 'absolute', top: '-50%', left: '-50%',
+            width: '200%', height: '200%',
+            background: `conic-gradient(from 0deg, transparent, ${color}45, transparent, transparent, ${color}45, transparent)`,
+            animation: 'bento-border-spin 4s linear infinite',
+            opacity: hovered ? 1 : 0,
+            transition: `opacity 0.5s ${easing}`,
+            pointerEvents: 'none',
+          }} />
+        )}
+
+        {/* Inner content — 1px inset reveals the border */}
         <div style={{
-          position: 'absolute', top: '-50%', right: '-30%',
-          width: '200px', height: '200px', borderRadius: '50%',
-          background: `radial-gradient(circle, ${color}${hovered ? '15' : '08'} 0%, transparent 70%)`,
-          transition: `all 0.5s ${easing}`,
-          pointerEvents: 'none',
-        }} />
-      )}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {children}
+          flex: 1,
+          position: 'relative',
+          margin: '1px',
+          borderRadius: '15px',
+          background: colors.card,
+          padding: '24px',
+          ...extraStyle,
+        }}>
+          {glowOnHover && (
+            <div style={{
+              position: 'absolute', top: '-50%', right: '-30%',
+              width: '200px', height: '200px', borderRadius: '50%',
+              background: `radial-gradient(circle, ${color}${hovered ? '15' : '08'} 0%, transparent 70%)`,
+              transition: `all 0.5s ${easing}`, pointerEvents: 'none',
+            }} />
+          )}
+          <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
+        </div>
       </div>
     </div>
   );
 };
 
 /* ── Stat Tile (1x1) ────────────────────────────────────────── */
-const StatTile = ({ label, value, sub, color, numeric, prefix = '', suffix = '', decimals = 0 }) => {
+const StatTile = ({ label, value, sub, color, numeric, prefix = '', suffix = '', decimals = 0, delay = 0 }) => {
   const [ref, inView] = useInView({ threshold: 0.3 });
   return (
-    <BentoTile color={color}>
+    <BentoTile color={color} delay={delay}>
       <div ref={ref}>
         <div style={{
           fontSize: '10px', fontWeight: 600, color: colors.textDim,
@@ -75,11 +160,11 @@ const StatTile = ({ label, value, sub, color, numeric, prefix = '', suffix = '',
 };
 
 /* ── Stage Tile ─────────────────────────────────────────────── */
-const StageTile = ({ stage, span = 1, rowSpan = 1 }) => {
+const StageTile = ({ stage, span = 1, rowSpan = 1, delay = 0 }) => {
   const svcColor = serviceColors[stage.service] || serviceColors.default;
 
   return (
-    <BentoTile span={span} rowSpan={rowSpan} color={svcColor}>
+    <BentoTile span={span} rowSpan={rowSpan} color={svcColor} delay={delay}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <span style={{ fontSize: '20px' }}>{stage.icon}</span>
@@ -163,10 +248,13 @@ const PipelineBento = () => {
   const [ref, inView] = useInView({ threshold: 0.05 });
 
   return (
-    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '960px', margin: '0 auto', position: 'relative' }}>
+      <BentoStyles />
+      <DotGrid />
+
       {/* Header */}
       <div ref={ref} style={{
-        textAlign: 'center', marginBottom: '32px',
+        textAlign: 'center', marginBottom: '32px', position: 'relative',
         opacity: inView ? 1 : 0, transform: inView ? 'translateY(0)' : 'translateY(16px)',
         transition: `all 0.7s ${easing}`,
       }}>
@@ -187,9 +275,10 @@ const PipelineBento = () => {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '16px',
+        position: 'relative',
       }}>
         {/* Hero tile — pipeline overview (2-col) */}
-        <BentoTile span={2} color={colors.accent} style={{
+        <BentoTile span={2} color={colors.accent} delay={0} style={{
           background: `linear-gradient(135deg, ${colors.card}, ${colors.bg})`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -210,9 +299,7 @@ const PipelineBento = () => {
             background: `${colors.accent}06`, borderRadius: '10px', padding: '14px',
           }}>
             {['📥 Ingest', '🚂 GPU', '🎯 Detect', '✌️ Hands', '📊 Analyze'].map((s, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-              }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '13px' }}>{s}</span>
                 {i < 4 && <span style={{ color: colors.textDim, fontSize: '12px' }}>→</span>}
               </div>
@@ -220,26 +307,32 @@ const PipelineBento = () => {
           </div>
         </BentoTile>
 
-        {/* Stat tiles */}
-        <StatTile {...heroStats[0]} />
-        <StatTile {...heroStats[1]} prefix="~" suffix=" min" decimals={0} numeric={6} />
-        <StatTile {...heroStats[2]} suffix=" fps" decimals={1} />
-        <StatTile {...heroStats[3]} prefix="$" suffix="" decimals={2} />
+        {/* Stat tiles (staggered entrance) */}
+        <StatTile {...heroStats[0]} delay={60} />
+        <StatTile {...heroStats[1]} prefix="~" suffix=" min" decimals={0} numeric={6} delay={120} />
+        <StatTile {...heroStats[2]} suffix=" fps" decimals={1} delay={180} />
+        <StatTile {...heroStats[3]} prefix="$" suffix="" decimals={2} delay={240} />
 
-        {/* GPU Processing — featured large tile (2-col, 2-row) */}
-        <StageTile stage={pipelineStages[1]} span={2} rowSpan={2} />
+        {/* ── Flow: upload → processing ── */}
+        <FlowConnector color={colors.green} label="S3 → SQS" />
+
+        {/* GPU Processing (2-col) */}
+        <StageTile stage={pipelineStages[1]} span={2} delay={0} />
 
         {/* Ingestion */}
-        <StageTile stage={pipelineStages[0]} />
+        <StageTile stage={pipelineStages[0]} delay={60} />
 
         {/* Swing Detection */}
-        <StageTile stage={pipelineStages[2]} />
+        <StageTile stage={pipelineStages[2]} delay={120} />
+
+        {/* ── Flow: detection → post-processing ── */}
+        <FlowConnector color={colors.amber} label=".pkl → Lambda" />
 
         {/* Hand & Score Finder (2-col) */}
-        <StageTile stage={pipelineStages[3]} span={2} />
+        <StageTile stage={pipelineStages[3]} span={2} delay={0} />
 
-        {/* Analysis */}
-        <StageTile stage={pipelineStages[4]} span={2} />
+        {/* Analysis (2-col) */}
+        <StageTile stage={pipelineStages[4]} span={2} delay={60} />
       </div>
     </div>
   );
