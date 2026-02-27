@@ -5,12 +5,20 @@ const PipelineClassic = lazy(() => import('./PipelineClassic'));
 const PipelineBento = lazy(() => import('./PipelineBento'));
 const PipelineScroll = lazy(() => import('./PipelineScroll'));
 const PipelineCombined = lazy(() => import('./PipelineCombined'));
+const PipelineTerminal = lazy(() => import('./PipelineTerminal'));
+const PipelineMetro = lazy(() => import('./PipelineMetro'));
+const PipelineIsometric = lazy(() => import('./PipelineIsometric'));
+const PipelineComic = lazy(() => import('./PipelineComic'));
 
 const VARIANTS = [
   { id: 'classic', label: 'Classic', component: PipelineClassic },
   { id: 'bento', label: 'Bento', component: PipelineBento },
   { id: 'scroll', label: 'Scroll', component: PipelineScroll },
   { id: 'combined', label: 'Combined', component: PipelineCombined },
+  { id: 'terminal', label: 'Terminal', component: PipelineTerminal },
+  { id: 'metro', label: 'Metro', component: PipelineMetro },
+  { id: 'isometric', label: 'Isometric', component: PipelineIsometric },
+  { id: 'comic', label: 'Comic', component: PipelineComic },
 ];
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -47,6 +55,9 @@ const PipelineCore = () => {
           padding: '4px',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
+          overflowX: 'auto',
+          maxWidth: '100%',
+          scrollbarWidth: 'none',
         }}>
           {VARIANTS.map(v => {
             const isActive = active === v.id;
