@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import GpuTricks from './GpuTricks';
 import GpuUtilRoadmap from './GpuUtilRoadmap';
 import ParallelizationRoadmap from './ParallelizationRoadmap';
+import CloudGpuLimitations from './CloudGpuLimitations';
 
 const colors = {
   bg: '#0a0f1a',
@@ -10,6 +11,7 @@ const colors = {
   accent: '#60a5fa',
   green: '#34d399',
   cyan: '#22d3ee',
+  rose: '#fb7185',
   text: '#e2e8f0',
   textMuted: '#94a3b8',
   textDim: '#64748b',
@@ -19,6 +21,7 @@ const sections = [
   { id: 'journey', label: 'GPU Optimization', sub: '18 min \u2192 6 min', component: GpuTricks, color: colors.accent },
   { id: 'next', label: "What's Next", sub: '6 min → 4 min', component: GpuUtilRoadmap, color: colors.green },
   { id: 'scaling', label: 'Scaling', sub: '1 → N instances', component: ParallelizationRoadmap, color: colors.cyan },
+  { id: 'cloud-limits', label: 'Cloud GPU Limits', sub: 'why L4 loses to 3090', component: CloudGpuLimitations, color: colors.rose },
 ];
 
 export default function GpuDeepDive() {
