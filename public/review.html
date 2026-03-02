@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golf Swing — Detection Review</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --bg: #1a1a1a;
+  --surface: #252525;
+  --surface2: #2e2e2e;
+  --border: #484848;
+  --text: #e0e0e0;
+  --muted: #aaa;
+  --accent: #4fc3f7;
+  /* these are for HTML only — NOT passed to Chart.js canvas */
+  --c-orange:  #ff9800;
+  --c-blue:    #42a5f5;
+  --c-yellow:  #ffee58;
+  --c-red:     #ef5350;
+  --c-green:   #66bb6a;
+  --c-magenta: #ec407a;
+  --c-cyan:    #26c6da;
+}
+/* Hex constants used in Chart.js (must never be CSS vars in canvas context) */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+h1  { font-size: 1.4rem; font-weight: 600; color: var(--accent); }
+h2  { font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-bottom: .5rem; border-bottom: 1px solid var(--border); padding-bottom: .4rem; }
+h3  { font-size: .9rem; font-weight: 600; color: var(--muted); margin-bottom: .3rem; }
+#header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: .75rem 1.5rem; display: flex; align-items: center; gap: 1.5rem;
+  position: sticky; top: 0; z-index: 100;
+}
+#main { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+select {
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: .35rem .6rem; font-size: .9rem; cursor: pointer;
+}
+.spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.row { display: flex; gap: 1.2rem; flex-wrap: wrap; }
+.col { flex: 1; min-width: 220px; }
+.frame-img { max-height: 380px; border-radius: 4px; border: 1px solid var(--border); display: block; }
+.chart-wrap { position: relative; width: 100%; }
+.chart-wrap canvas { position: absolute; top: 0; left: 0; }
+.expl { font-size: .84rem; color: var(--muted); margin-top: .5rem; }
+.expl strong { color: var(--text); }
+.expl code { background: var(--surface2); padding: 0 .3rem; border-radius: 3px; font-size: .82rem; color: #a5d6a7; }
+pre.code-block { background: var(--surface2); padding: .5rem .8rem; border-radius: 4px; font-size: .8rem; color: #a5d6a7; overflow-x: auto; margin-top: .4rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; }
+@media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-top: .5rem; }
+.li { display: flex; align-items: center; gap: .3rem; font-size: .8rem; color: var(--muted); }
+.li-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.li-line { width: 20px; height: 3px; flex-shrink: 0; }
+.zoom-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: .9rem; margin-top: .7rem; }
+.zoom-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: .7rem; }
+.zoom-card.filtered { opacity: .5; }
+.zoom-card h4 { font-size: .82rem; color: var(--muted); margin-bottom: .4rem; }
+.filtered-tag { color: #ef5350; font-size: .76rem; margin-left: .4rem; }
+.anatomy-legend { margin-top: 1rem; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.anatomy-legend table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.anatomy-legend th { background: var(--surface2); color: var(--muted); padding: .35rem .7rem; font-weight: 600; text-align: left; border-bottom: 1px solid var(--border); }
+.anatomy-legend td { padding: .3rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.anatomy-legend tr:last-child td { border-bottom: none; }
+.anatomy-legend td:first-child { width: 22px; text-align: center; }
+.anatomy-legend td:nth-child(2) { white-space: nowrap; }
+.anatomy-legend code { background: var(--surface2); padding: 0 .3rem; border-radius: 3px; font-size: .78rem; color: #a5d6a7; }
+.badge { display: inline-block; width: 18px; height: 18px; border-radius: 50%; text-align: center; line-height: 18px; font-size: .7rem; font-weight: bold; color: #fff; }
+.summary-img-wrap { flex: 1; min-width: 260px; }
+.summary-img-wrap img { width: 100%; border-radius: 4px; border: 1px solid var(--border); }
+.summary-img-wrap p { font-size: .78rem; color: var(--muted); text-align: center; margin-top: .3rem; }
+.filter-log { background: #2a2200; border: 1px solid #5a4000; border-radius: 4px; padding: .55rem .8rem; margin-top: .7rem; font-size: .82rem; color: #ffcc80; }
+.filter-log ul { padding-left: 1.2rem; }
+table.summary-tbl { width: 100%; border-collapse: collapse; margin-top: .7rem; font-size: .84rem; }
+.summary-tbl th { background: var(--surface2); color: var(--muted); padding: .35rem .6rem; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
+.summary-tbl td { padding: .3rem .6rem; border-bottom: 1px solid var(--border); }
+.summary-tbl tr:last-child td { border-bottom: none; }
+.meta-bar { font-size: .79rem; color: var(--muted); margin-top: .6rem; }
+.err-box { background: #3a0000; border: 1px solid #7a0000; border-radius: 6px; padding: .8rem 1rem; color: #ff8a80; margin-bottom: 1rem; }
+.pill { display: inline-block; border-radius: 10px; padding: 0 .5rem; font-size: .75rem; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Palette (hex — safe to pass into Chart.js canvas context) ────────────
+const C = {
+  raw:    '#6e6e6e',
+  coarse: '#ffa726',
+  fine:   '#64b5f6',
+  anchor: '#fff176',
+  pre:    '#ffcc80',
+  final:  '#ef9a9a',
+  contact:'#a5d6a7',
+  cyan:   '#4dd0e1',
+  mag:    '#f48fb1',
+  grid:   '#383838',
+  tick:   '#b0b0b0',
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function nearestVal(frame, frames, values) {
+  if (!frames || !frames.length) return 0;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < frames.length; i++) {
+    const d = Math.abs(frames[i] - frame);
+    if (d < bd) { bd = d; best = i; }
+  }
+  return values[best];
+}
+
+function fmtTime(frame, fps) {
+  const s = frame / fps;
+  const m = Math.floor(s / 60);
+  const ss = (s % 60).toFixed(2).padStart(5, '0');
+  return `${m}:${ss}`;
+}
+
+// ── API abstraction (Flask or static) ────────────────────────────────────
+// staticBase = null  → Flask mode  (all /api/* routes)
+// staticBase = 'url' → Static mode (pre-baked swing-data/ files)
+function makeAPI(staticBase) {
+  return {
+    listVideos: () => staticBase
+      ? fetch(staticBase + 'index.json').then(r => r.json())
+          .then(arr => arr.map(v => ({ name: v.name, has_mov: v.has_frames })))
+      : fetch('/api/videos').then(r => r.json()),
+    getSignal: v => staticBase
+      ? fetch(staticBase + v + '/signal.json').then(r => r.json())
+      : fetch('/api/signal/' + v).then(r => r.json()),
+    frameUrl:  (v, f)  => staticBase
+      ? staticBase + v + '/frame_' + f + '.jpg'
+      : '/api/frame/' + v + '/' + f,
+    outputUrl: (v, fn) => staticBase ? null : '/api/outputs/' + v + '/' + fn,
+  };
+}
+
+// ── Chart.js base options ─────────────────────────────────────────────────
+function baseOpts({ yInvert = false, xTitle = 'Time (s)', yTitle = 'Signal value', xMin, xMax } = {}) {
+  const opts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: {
+        type: 'linear',
+        min: xMin, max: xMax,
+        title: { display: !!xTitle, text: xTitle, color: '#c8c8c8', font: { size: 12, weight: '500' } },
+        grid:  { color: C.grid },
+        ticks: { color: C.tick, maxTicksLimit: 10, font: { size: 11 } },
+      },
+      y: {
+        reverse: yInvert,
+        title: { display: !!yTitle, text: yTitle, color: '#c8c8c8', font: { size: 12, weight: '500' } },
+        grid:  { color: C.grid },
+        ticks: { color: C.tick, font: { size: 11 } },
+      },
+    },
+    plugins: {
+      legend: { labels: { color: '#d0d0d0', boxWidth: 16, font: { size: 12, weight: '500' } }, position: 'top' },
+      tooltip: { backgroundColor: '#252525', titleColor: '#e0e0e0', bodyColor: '#c0c0c0', borderColor: '#555', borderWidth: 1 },
+    },
+  };
+  return opts;
+}
+
+// ── Chart canvas wrapper ──────────────────────────────────────────────────
+function ChartCanvas({ cfg: config, height = 260 }) {
+  const canvasRef = useRef(null);
+  const chartRef  = useRef(null);
+  useEffect(() => {
+    if (!canvasRef.current || !config) return;
+    if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    chartRef.current = new Chart(canvasRef.current, config);
+    return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+  }, [config]);
+  return (
+    <div className="chart-wrap" style={{ height }}>
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    </div>
+  );
+}
+
+// ── Dataset builders ──────────────────────────────────────────────────────
+const mkLine = (frames, values, fps, color, label, width = 1.5) => ({
+  label, showLine: true, pointRadius: 0, tension: 0,
+  borderColor: color, backgroundColor: 'transparent', borderWidth: width,
+  data: frames.map((f, i) => ({ x: f / fps, y: values[i] })),
+});
+const mkScatter = (frames, fps, coarseFrames, coarseValues, color, label, pStyle, rot = 0, radius = 9) => ({
+  label, showLine: false,
+  borderColor: '#111111', backgroundColor: color,
+  borderWidth: 1.5, pointRadius: radius, pointStyle: pStyle, rotation: rot, order: 0,
+  data: frames.map(f => ({ x: f / fps, y: nearestVal(f, coarseFrames, coarseValues) })),
+});
+
+// ── SECTION 1 — Keypoints ────────────────────────────────────────────────
+function KeypointsSection({ video, sd, api }) {
+  const frameNum = sd.final_peaks.length > 0 ? sd.final_peaks[0] : (sd.anchors.length > 0 ? sd.anchors[0] : null);
+  const fallbackSrc = api.outputUrl(video, video + '_backswing_grid.png');
+  const [imgSrc, setImgSrc] = useState(frameNum != null ? api.frameUrl(video, frameNum) : null);
+  return (
+    <section className="section">
+      <h2>1 — Keypoints Used to Build the Signal</h2>
+      <div className="row" style={{ alignItems: 'flex-start' }}>
+        <div className="col" style={{ flex: '0 0 auto', maxWidth: 340 }}>
+          {imgSrc
+            ? <img className="frame-img" src={imgSrc}
+                onError={e => fallbackSrc ? setImgSrc(fallbackSrc) : (e.target.style.display='none')}
+                alt={`Frame ${frameNum}`} />
+            : <p className="expl">No frames detected</p>}
+          {frameNum != null && <p className="expl" style={{ marginTop: 4 }}>Frame {frameNum} ({fmtTime(frameNum, sd.fps)})</p>}
+        </div>
+        <div className="col">
+          <p className="expl">
+            ViTPose-Huge runs on every video frame and outputs <strong>COCO-17 keypoints</strong> — 17 body
+            joints, each with an (x, y) pixel coordinate and a confidence score in [0, 1].
+            Of those 17 joints the detector uses only two:
+          </p>
+          <ul className="expl" style={{ paddingLeft: '1.2rem', marginTop: 6 }}>
+            <li><strong style={{ color: '#ec407a' }}>Index 9 — Left wrist</strong></li>
+            <li><strong style={{ color: '#ec407a' }}>Index 10 — Right wrist</strong></li>
+          </ul>
+          <p className="expl" style={{ marginTop: 8 }}>
+            Combined signal formula (one scalar per frame):
+          </p>
+          <pre className="code-block">{`signal[t] = (x_L[t] + x_R[t]) / 2
+           + (y_L[t] + y_R[t]) / 2`}</pre>
+          <p className="expl" style={{ marginTop: 8 }}>
+            Summing x and y means that a backswing (hands travel up <em>and</em> to the right for a right-handed golfer)
+            causes a large downward shift in both coordinates simultaneously, producing a strong dip in the signal.
+          </p>
+          <p className="expl" style={{ marginTop: 6 }}>
+            Frames where either wrist confidence &lt;&nbsp;0.3 are <strong>linearly interpolated</strong> from
+            surrounding high-confidence frames before computing the signal (<code>_interp_low_conf()</code>).
+            This prevents tracker glitches from creating false peaks.
+          </p>
+          <div className="legend" style={{ marginTop: 10 }}>
+            <span className="li"><span className="li-dot" style={{ background: '#ec407a' }} />Wrist joints (large magenta circle, labelled L/R)</span>
+            <span className="li"><span className="li-dot" style={{ background: '#4caf50' }} />Other joints (small green, score&nbsp;&gt;&nbsp;0.1)</span>
+            <span className="li"><span className="li-dot" style={{ background: '#777' }} />Limb skeletons (colour-coded by body region)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── SECTION 2 — Raw signal ────────────────────────────────────────────────
+function RawSignalSection({ sd }) {
+  const fps = sd.fps;
+  const config = {
+    type: 'line',
+    data: { datasets: [ mkLine(sd.raw_frames, sd.raw_values, fps, C.raw, 'Raw combined signal') ] },
+    options: baseOpts({ yInvert: true, yTitle: 'x+y pixel sum' }),
+  };
+  return (
+    <section className="section">
+      <h2>2 — Raw Combined Signal</h2>
+      <ChartCanvas cfg={config} height={240} />
+      <div className="two-col" style={{ marginTop: '0.7rem' }}>
+        <div>
+          <h3>What you are seeing</h3>
+          <p className="expl">
+            Each data point is one frame's wrist x+y sum. The Y-axis is <strong>inverted</strong> so
+            that a backswing — where the wrists rise to a smaller pixel-y value — appears as a
+            visual <em>peak</em> rather than a trough.  A typical video at 60 fps with 6 swings spans
+            ~170 seconds and &gt;10,000 frames; the signal is downsampled to ≤3,000 points for display.
+          </p>
+        </div>
+        <div>
+          <h3>Why it is noisy</h3>
+          <p className="expl">
+            Body sway, weight shift, walking between shots, partial occlusion and tracker jitter all
+            modulate the wrist positions frame-to-frame.  Small oscillations of ±50–100 px are normal.
+            The signal also drifts over the course of a session as the golfer moves relative to the
+            camera.  Two-pass Savitzky-Golay smoothing (Section 3) handles all of this.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── SECTION 3 — Smoothing + peak detection ───────────────────────────────
+function SmoothingSection({ sd }) {
+  const fps = sd.fps;
+  const config = {
+    type: 'line',
+    data: {
+      datasets: [
+        mkLine(sd.raw_frames,    sd.raw_values,    fps, C.raw,    'Raw',           1.0),
+        mkLine(sd.coarse_frames, sd.coarse_values, fps, C.coarse, 'Coarse (w=61)', 2.0),
+        mkLine(sd.smooth_frames, sd.smooth_values, fps, C.fine,   'Fine (w=9)',    2.0),
+        mkScatter(sd.anchors,          fps, sd.coarse_frames, sd.coarse_values, C.anchor,  'Anchors',          'rectRot', 0, 9),
+        mkScatter(sd.pre_filter_peaks, fps, sd.coarse_frames, sd.coarse_values, C.pre,     'Pre-filter peaks', 'triangle', 0, 8),
+        mkScatter(sd.final_peaks,      fps, sd.coarse_frames, sd.coarse_values, C.final,   'Final peaks',      'triangle', 180, 10),
+        mkScatter(sd.contacts,         fps, sd.coarse_frames, sd.coarse_values, C.contact, 'Contacts',         'triangle', 0, 8),
+      ],
+    },
+    options: baseOpts({ yInvert: true, yTitle: 'Signal value' }),
+  };
+  return (
+    <section className="section">
+      <h2>3 — Two-Pass Smoothing and Peak Detection</h2>
+      <ChartCanvas cfg={config} height={300} />
+      <div className="two-col" style={{ marginTop: '0.7rem' }}>
+        <div>
+          <h3>Pass 1 — Coarse Savitzky-Golay (orange, window=61)</h3>
+          <p className="expl">
+            A wide polynomial window aggressively removes high-frequency tracker jitter while
+            preserving the slow U-shaped arc of each backswing.  Its derivative (<code>np.diff(coarse)</code>)
+            is used to find <strong>zero-crossings</strong> — transitions from descending to ascending slope —
+            within a 350-frame look-back window before each anchor.  These zero-crossings are the
+            candidate peak frames for the refinement step.
+          </p>
+          <h3 style={{ marginTop: '0.7rem' }}>Pass 2 — Fine Savitzky-Golay (blue, window=9)</h3>
+          <p className="expl">
+            A narrow window retains enough shape for accurate frame-level localisation.
+            <code>find_peaks(-fine, prominence=300, distance=300)</code> finds the <strong>anchors</strong>
+            (yellow diamonds) by searching the <em>negated</em> fine signal for prominent local maxima
+            that are at least 300 frames apart.  Prominence=300 means the peak must stand out by
+            at least 300 px above its surrounding baseline — this reliably rejects small ripples.
+          </p>
+        </div>
+        <div>
+          <h3>Refinement loop</h3>
+          <p className="expl">
+            For each anchor, <code>_detect_peaks()</code> collects all zero-crossings of the coarse
+            derivative in the look-back window.  Each candidate is scored by <code>_backswing_score()</code>
+            which rewards a <em>smooth approach</em> (low std of fine signal diff) and a
+            <em>sharp departure drop</em> (signal decreases quickly after peak).  The winner
+            becomes the <strong>pre-filter peak</strong> (orange ▲), then a final 15-frame
+            argmin on the <em>fine</em> signal locks the <strong>final peak</strong> (red ▼)
+            to the exact frame of minimum wrist height.
+          </p>
+          <h3 style={{ marginTop: '0.7rem' }}>Filter chain → contacts</h3>
+          <p className="expl">
+            <code>_filter_peaks()</code> runs four sequential gates: <strong>dedup → end-of-video
+            trim → too-close merge (300 fr) → MAD outlier removal</strong> on the x+y value,
+            then a <strong>follow-through rejection</strong> pass on the wrist x-offset relative
+            to the shoulder midpoint.  Surviving peaks are passed to <code>_detect_contact_points()</code>
+            which finds the argmax of a separately-smoothed signal in [peak+10, peak+90] frames —
+            the moment of maximum wrist speed during impact.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── SECTION 4 — Annotated swing anatomy ──────────────────────────────────
+function AnatomySection({ sd }) {
+  const fps   = sd.fps;
+  const cfg   = sd.cfg;
+  // Pick first non-filtered anchor; fall back to first anchor
+  const pa = sd.per_anchor.find(p => !p.is_filtered) || sd.per_anchor[0];
+  if (!pa) return null;
+
+  const xLo = (pa.search_start - 20) / fps;
+  const xHi = ((pa.contact || (pa.pre_filter_peak + cfg.contact_search_max + 30)) + 30) / fps;
+
+  // Slice downsampled arrays to this window
+  const inW = (f) => f / fps >= xLo && f / fps <= xHi;
+  const coarseSlice = sd.coarse_frames.map((f,i) => ({ x: f/fps, y: sd.coarse_values[i] })).filter(p => p.x >= xLo && p.x <= xHi);
+  const fineSlice   = sd.smooth_frames.map((f,i) => ({ x: f/fps, y: sd.smooth_values[i] })).filter(p => p.x >= xLo && p.x <= xHi);
+
+  // Annotation plugin
+  const annot = {
+    id: 'anatomy-annot',
+    afterDatasetsDraw(chart) {
+      const { ctx, scales: { x, y }, chartArea: ca } = chart;
+      if (!x || !y) return;
+      const px  = f => x.getPixelForValue(f / fps);
+      const py  = v => y.getPixelForValue(v);
+      const mid = (ca.top + ca.bottom) / 2;
+
+      ctx.save();
+
+      // ① Search-back region (pale yellow fill)
+      ctx.fillStyle = 'rgba(255,238,88,0.09)';
+      ctx.fillRect(px(pa.search_start), ca.top, px(pa.anchor) - px(pa.search_start), ca.height);
+
+      // ② Refine window (bright cyan fill — much more visible)
+      ctx.fillStyle = 'rgba(38,198,218,0.22)';
+      ctx.fillRect(px(pa.best_candidate), ca.top,
+                   px(pa.best_candidate + cfg.refine_window) - px(pa.best_candidate), ca.height);
+
+      // ③ Contact search window (pale green fill)
+      if (pa.pre_filter_peak != null) {
+        ctx.fillStyle = 'rgba(102,187,106,0.13)';
+        ctx.fillRect(px(pa.pre_filter_peak + cfg.contact_search_min), ca.top,
+                     px(pa.pre_filter_peak + cfg.contact_search_max) - px(pa.pre_filter_peak + cfg.contact_search_min), ca.height);
+      }
+
+      // Helper: dashed vertical line
+      function vline(frame, color, dash=[5,4]) {
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash(dash);
+        ctx.beginPath(); ctx.moveTo(px(frame), ca.top); ctx.lineTo(px(frame), ca.bottom); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Helper: numbered badge with leader line
+      function badge(frame, sigVal, num, color, yOffset = 0) {
+        const bx = px(frame);
+        const dataY = py(sigVal);
+        const by = ca.top + 18 + yOffset;
+        // leader line
+        ctx.strokeStyle = color + 'aa'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(bx, by + 9); ctx.lineTo(bx, dataY - 8); ctx.stroke();
+        ctx.setLineDash([]);
+        // circle
+        ctx.beginPath(); ctx.arc(bx, by, 9, 0, Math.PI*2);
+        ctx.fillStyle = color + 'dd'; ctx.fill();
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+        // number
+        ctx.fillStyle = '#111'; ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(num), bx, by);
+      }
+
+      // ④ Candidates (zero-crossing) circles on coarse line
+      pa.candidates.forEach(c => {
+        const cx = px(c);
+        const cv = nearestVal(c, sd.coarse_frames, sd.coarse_values);
+        const cy = py(cv);
+        ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2);
+        ctx.strokeStyle = C.anchor + 'cc'; ctx.lineWidth = 2; ctx.stroke();
+      });
+
+      // Vertical lines at key frames (dashed)
+      vline(pa.anchor,           C.anchor, [6,3]);
+      vline(pa.best_candidate,   C.pre,    [4,3]);
+      vline(pa.pre_filter_peak,  C.final,  [3,2]);
+      if (pa.contact) vline(pa.contact, C.contact, [4,3]);
+
+      // Badges (staggered vertically to avoid overlap)
+      const aY = nearestVal(pa.anchor,          sd.coarse_frames, sd.coarse_values);
+      const bY = nearestVal(pa.best_candidate,  sd.coarse_frames, sd.coarse_values);
+      const pfY= nearestVal(pa.pre_filter_peak, sd.coarse_frames, sd.coarse_values);
+      const ctY= pa.contact ? nearestVal(pa.contact, sd.coarse_frames, sd.coarse_values) : null;
+
+      badge(pa.anchor,          aY,  3, C.anchor,  0);
+      badge(pa.best_candidate,  bY,  5, C.pre,     22);
+      badge(pa.pre_filter_peak, pfY, 6, C.final,   0);
+      if (pa.contact && ctY != null) badge(pa.contact, ctY, 8, C.contact, 22);
+
+      // Badge for candidate circles: one representative (first cand ≠ anchor)
+      const repCand = pa.candidates.find(c => c !== pa.anchor);
+      if (repCand != null) {
+        const rv = nearestVal(repCand, sd.coarse_frames, sd.coarse_values);
+        badge(repCand, rv, 2, C.anchor + 'bb', 22);
+      }
+
+      // Region labels at top of shaded areas
+      ctx.font = '10px monospace'; ctx.textBaseline = 'top'; ctx.textAlign = 'center';
+
+      const labelRegion = (lo, hi, text, color) => {
+        const mx = (px(lo) + px(hi)) / 2;
+        ctx.fillStyle = color;
+        ctx.fillText(text, mx, ca.top + 2);
+      };
+      labelRegion(pa.search_start, pa.anchor,  '① search_back', C.anchor + 'cc');
+      labelRegion(pa.best_candidate, pa.best_candidate + cfg.refine_window, '⑦ refine', C.cyan + 'dd');
+      if (pa.pre_filter_peak != null) {
+        labelRegion(pa.pre_filter_peak + cfg.contact_search_min,
+                    pa.pre_filter_peak + cfg.contact_search_max,
+                    '⑦ contact window', C.contact + 'cc');
+      }
+
+      ctx.restore();
+    },
+  };
+
+  const chartConfig = {
+    type: 'line',
+    data: {
+      datasets: [
+        mkLine(sd.coarse_frames.filter(inW), sd.coarse_values.filter((_, i) => inW(sd.coarse_frames[i])), fps, C.coarse, 'Coarse (w=61)', 2.0),
+        mkLine(sd.smooth_frames.filter(inW), sd.smooth_values.filter((_, i) => inW(sd.smooth_frames[i])), fps, C.fine,   'Fine (w=9)',    2.0),
+      ],
+    },
+    options: { ...baseOpts({ yInvert: true, yTitle: 'Signal value', xMin: xLo, xMax: xHi }), plugins: { ...baseOpts().plugins, legend: { display: false } } },
+    plugins: [annot],
+  };
+
+  // Correct approach to filter parallel arrays
+  const coarseFiltered = sd.coarse_frames
+    .map((f, i) => ({ f, v: sd.coarse_values[i] }))
+    .filter(({ f }) => f / fps >= xLo && f / fps <= xHi);
+  const fineFiltered = sd.smooth_frames
+    .map((f, i) => ({ f, v: sd.smooth_values[i] }))
+    .filter(({ f }) => f / fps >= xLo && f / fps <= xHi);
+  const correctedConfig = {
+    ...chartConfig,
+    data: {
+      datasets: [
+        { ...mkLine([], [], fps, C.coarse, 'Coarse (w=61)', 2.0), data: coarseFiltered.map(({ f, v }) => ({ x: f/fps, y: v })) },
+        { ...mkLine([], [], fps, C.fine,   'Fine (w=9)',    2.0), data: fineFiltered.map(({ f, v }) => ({ x: f/fps, y: v })) },
+      ],
+    },
+  };
+
+  const ANATOMY_ROWS = [
+    { num: '①', color: C.anchor,  what: 'Search-back window (yellow region)',    who: 'detect_peaks()',          code: `ss = max(0, anchor - cfg.search_back)  # 350 frames` },
+    { num: '②', color: C.anchor,  what: 'Zero-crossing candidates (open circles)', who: '_detect_peaks()',         code: `d[i] <= 0 and d[i+1] > 0  # diff(coarse)` },
+    { num: '③', color: C.anchor,  what: 'Anchor (yellow diamond)',               who: 'find_peaks()',             code: `find_peaks(-smoothed, prominence=300, distance=300)` },
+    { num: '④', color: C.raw,     what: 'Coarse signal (orange line)',            who: 'savgol_filter()',          code: `savgol_filter(combined, cfg.coarse_window=61, 3)` },
+    { num: '⑤', color: C.fine,    what: 'Fine signal (blue line)',                who: 'savgol_filter()',          code: `savgol_filter(combined, cfg.savgol_window=9, 3)` },
+    { num: '⑥', color: C.pre,     what: 'Best candidate (orange ▲)',             who: '_backswing_score()',       code: `argmin(approach_jitter − 0.5 * departure_drop)` },
+    { num: '⑦', color: C.cyan,    what: 'Refine window (cyan region)',            who: '_detect_peaks()',          code: `argmin(smoothed[best : best + cfg.refine_window + 1])` },
+    { num: '⑦', color: C.final,   what: 'Final peak (red vertical)',              who: '_detect_peaks() → return', code: `best + argmin(refine)  # exact frame` },
+    { num: '⑧', color: C.contact, what: 'Contact search window (green region)',   who: '_detect_contact_points()', code: `[peak + contact_search_min, peak + contact_search_max]` },
+    { num: '⑧', color: C.contact, what: 'Contact frame (green vertical)',         who: '_detect_contact_points()', code: `argmax(savgol(combined, 5, 2))  # impact moment` },
+  ];
+
+  return (
+    <section className="section">
+      <h2>4 — Swing Anatomy: What Each Algorithm Step Finds</h2>
+      <p className="expl" style={{ marginBottom: '0.7rem' }}>
+        This chart zooms into a single swing and shows <em>every intermediate result</em>
+        the pipeline computes, from the initial <code>find_peaks</code> anchor right through to contact.
+        Swing shown: anchor at frame <strong>{pa.anchor}</strong> ({(pa.anchor/fps).toFixed(2)}s),
+        {' '}{pa.candidates.length} zero-crossing candidate(s) found.
+        Numbered badges match the legend below.
+      </p>
+      <ChartCanvas cfg={correctedConfig} height={340} />
+      <div className="anatomy-legend">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Feature</th>
+              <th>Producing function</th>
+              <th>Key code</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ANATOMY_ROWS.map((r, i) => (
+              <tr key={i}>
+                <td>
+                  <span className="badge" style={{ background: r.color + 'dd', border: `1px solid ${r.color}` }}>
+                    {r.num}
+                  </span>
+                </td>
+                <td style={{ color: r.color }}>{r.what}</td>
+                <td><code>{r.who}</code></td>
+                <td><code style={{ fontSize: '.75rem', color: '#b0bec5' }}>{r.code}</code></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="expl" style={{ marginTop: '0.7rem' }}>
+        <strong>Reading the chart:</strong> the <span style={{ color: C.anchor }}>yellow region</span> shows
+        where the algorithm searches for zero-crossings of the coarse derivative.
+        Open circles on the coarse line are each zero-crossing candidate; the one scored lowest
+        by <code>_backswing_score()</code> becomes the pre-filter peak (orange ▲).
+        The <span style={{ color: C.cyan }}>cyan region</span> is the 15-frame argmin window
+        that snaps the result to the exact low point.
+        Finally, the <span style={{ color: C.contact }}>green region</span> is where contact
+        detection looks for the impact moment.
+      </p>
+    </section>
+  );
+}
+
+// ── SECTION 5 — Per-swing zoom cards ─────────────────────────────────────
+function ZoomCard({ pa, swingIdx, sd }) {
+  const fps = sd.fps;
+  const LO = pa.anchor - 70, HI = pa.anchor + 40;
+
+  const slice = (frames, values) =>
+    frames.map((f, i) => ({ f, v: values[i] }))
+          .filter(({ f }) => f >= LO && f <= HI);
+
+  const coarseS = slice(sd.coarse_frames, sd.coarse_values);
+  const fineS   = slice(sd.smooth_frames, sd.smooth_values);
+
+  const shadePlugin = {
+    id: `shade-${swingIdx}`,
+    beforeDraw(chart) {
+      const { ctx, scales: { x, y }, chartArea: ca } = chart;
+      if (!x) return;
+      const px = f => x.getPixelForValue(f / fps);
+      ctx.save();
+      // Refine window — bright cyan, clearly visible
+      ctx.fillStyle = 'rgba(38,198,218,0.22)';
+      ctx.fillRect(px(pa.best_candidate), ca.top,
+                   px(pa.best_candidate + sd.cfg.refine_window) - px(pa.best_candidate), ca.height);
+      // Anchor dashed line
+      ctx.strokeStyle = C.anchor + 'aa'; ctx.lineWidth = 1.5; ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(px(pa.anchor), ca.top); ctx.lineTo(px(pa.anchor), ca.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    },
+  };
+
+  const anchorY = nearestVal(pa.anchor,          sd.coarse_frames, sd.coarse_values);
+  const prefY   = nearestVal(pa.pre_filter_peak, sd.coarse_frames, sd.coarse_values);
+  const finalY  = pa.is_filtered ? null : nearestVal(pa.pre_filter_peak, sd.coarse_frames, sd.coarse_values);
+
+  const opts = baseOpts({ yInvert: true, xTitle: 'Time (s)', yTitle: '' });
+  opts.scales.x.min = LO / fps;
+  opts.scales.x.max = HI / fps;
+  opts.plugins.legend = { display: false };
+
+  const config = {
+    type: 'line',
+    data: {
+      datasets: [
+        { label: 'Coarse', data: coarseS.map(({ f, v }) => ({ x: f/fps, y: v })), borderColor: C.coarse, backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 0, tension: 0, showLine: true },
+        { label: 'Fine',   data: fineS.map(({ f, v }) => ({ x: f/fps, y: v })),   borderColor: C.fine,   backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 0, tension: 0, showLine: true },
+        { label: 'Anchor', data: [{ x: pa.anchor/fps, y: anchorY }], borderColor: '#111', backgroundColor: C.anchor, borderWidth: 1.5, pointRadius: 10, showLine: false, pointStyle: 'rectRot' },
+        { label: 'Pre-filter', data: [{ x: pa.pre_filter_peak/fps, y: prefY }], borderColor: '#111', backgroundColor: C.pre, borderWidth: 1.5, pointRadius: 9, showLine: false, pointStyle: 'triangle' },
+        ...(!pa.is_filtered ? [{ label: 'Final', data: [{ x: pa.pre_filter_peak/fps, y: finalY }], borderColor: '#111', backgroundColor: C.final, borderWidth: 1.5, pointRadius: 9, showLine: false, pointStyle: 'triangle', rotation: 180 }] : []),
+      ],
+    },
+    options: opts,
+    plugins: [shadePlugin],
+  };
+
+  return (
+    <div className={`zoom-card${pa.is_filtered ? ' filtered' : ''}`}>
+      <h4>
+        Swing {swingIdx + 1} — anchor {pa.anchor} ({(pa.anchor/fps).toFixed(2)}s)
+        {pa.is_filtered && <span className="filtered-tag">(filtered out)</span>}
+      </h4>
+      <ChartCanvas cfg={config} height={180} />
+      <div style={{ fontSize: '.75rem', color: '#777', marginTop: 4, lineHeight: 1.7 }}>
+        <span style={{ color: C.anchor }}>◆ {pa.anchor}</span>
+        {' → '}
+        <span style={{ color: C.pre }}>▲ pre-filter {pa.pre_filter_peak}</span>
+        {!pa.is_filtered && <><span style={{ color: '#aaa' }}> → </span><span style={{ color: C.final }}>▼ final {pa.pre_filter_peak}</span></>}
+        {'  '}
+        <span style={{ color: C.cyan + 'cc' }}>░ refine [{pa.best_candidate}…{pa.best_candidate + sd.cfg.refine_window}]</span>
+      </div>
+    </div>
+  );
+}
+
+function ZoomCardsSection({ sd }) {
+  if (!sd.per_anchor || !sd.per_anchor.length) {
+    return (
+      <section className="section">
+        <h2>5 — Per-Swing Zoom Cards</h2>
+        <p className="expl">No anchors detected.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="section">
+      <h2>5 — Per-Swing Zoom Cards</h2>
+      <p className="expl" style={{ marginBottom: '0.5rem' }}>
+        Each card zooms in on −70 to +40 frames around one anchor.
+        The <span style={{ color: C.cyan }}>cyan region</span> is the 15-frame argmin
+        refinement window; the dashed yellow line marks the anchor.
+        Cards for filtered-out peaks are shown at 50% opacity.
+      </p>
+      <div className="legend" style={{ marginBottom: '0.6rem' }}>
+        <span className="li"><span className="li-line" style={{ background: C.coarse }} />Coarse (w=61)</span>
+        <span className="li"><span className="li-line" style={{ background: C.fine   }} />Fine (w=9)</span>
+        <span className="li"><span style={{ color: C.anchor, fontSize: 14 }}>◆</span> Anchor (find_peaks)</span>
+        <span className="li"><span style={{ color: C.pre, fontSize: 13 }}>▲</span> Pre-filter peak</span>
+        <span className="li"><span style={{ color: C.final, fontSize: 13 }}>▼</span> Final peak</span>
+        <span className="li"><span style={{ color: C.cyan + 'cc' }}>░</span> Refine window (15 fr)</span>
+      </div>
+      <div className="zoom-grid">
+        {sd.per_anchor.map((pa, i) => (
+          <ZoomCard key={i} pa={pa} swingIdx={i} sd={sd} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── SECTION 6 — Summary ───────────────────────────────────────────────────
+function SummarySection({ video, sd, api }) {
+  const fps = sd.fps;
+  const peaks = sd.final_peaks, contacts = sd.contacts;
+  const bsUrl = api.outputUrl(video, video + '_backswing_grid.png');
+  const ctUrl = api.outputUrl(video, video + '_contact_grid.png');
+  return (
+    <section className="section">
+      <h2>6 — Selected Frames and Summary</h2>
+      <div className="row">
+        {bsUrl && <div className="summary-img-wrap">
+          <img src={bsUrl} alt="Backswing grid"
+            onError={e => { e.target.style.display='none'; }} />
+          <p>Backswing grid (make_grid in visualize.py)</p>
+        </div>}
+        {ctUrl && <div className="summary-img-wrap">
+          <img src={ctUrl} alt="Contact grid"
+            onError={e => { e.target.style.display='none'; }} />
+          <p>Contact grid</p>
+        </div>}
+      </div>
+      {sd.filter_log.length > 0 && (
+        <div className="filter-log">
+          <strong>Filter log</strong> (<code>_filter_peaks()</code>):
+          <ul>{sd.filter_log.map((msg, i) => <li key={i}>{msg}</li>)}</ul>
+        </div>
+      )}
+      <table className="summary-tbl">
+        <thead>
+          <tr>
+            <th>#</th><th>Backswing frame</th><th>Backswing time</th>
+            <th>Contact frame</th><th>Contact time</th>
+            <th>Downswing frames</th><th>Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {peaks.map((pk, i) => {
+            const ct  = contacts[i] != null && contacts[i] >= 0 ? contacts[i] : null;
+            const dsf = ct != null ? ct - pk : null;
+            return (
+              <tr key={i}>
+                <td>{i+1}</td>
+                <td style={{ color: C.final }}>{pk}</td>
+                <td>{fmtTime(pk, fps)}</td>
+                <td style={{ color: C.contact }}>{ct != null ? ct : '—'}</td>
+                <td>{ct != null ? fmtTime(ct, fps) : '—'}</td>
+                <td>{dsf != null ? dsf : '—'}</td>
+                <td>{dsf != null ? (dsf/fps).toFixed(3)+'s' : '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="meta-bar">
+        fps: <strong>{fps.toFixed(3)}</strong> &nbsp;|&nbsp;
+        total frames: <strong>{sd.total_frames}</strong> &nbsp;|&nbsp;
+        duration: <strong>{(sd.total_frames/fps).toFixed(1)}s</strong> &nbsp;|&nbsp;
+        swings detected: <strong>{peaks.length}</strong> &nbsp;|&nbsp;
+        anchors found: <strong>{sd.anchors.length}</strong> &nbsp;|&nbsp;
+        filtered: <strong>{sd.anchors.length - peaks.length}</strong>
+      </p>
+    </section>
+  );
+}
+
+// ── App root ──────────────────────────────────────────────────────────────
+function App() {
+  const [videos,     setVideos]     = useState([]);
+  const [selected,   setSelected]   = useState(null);
+  const [signalData, setSignalData] = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
+  const [api,        setApi]        = useState(null);
+  const [mode,       setMode]       = useState('detecting'); // 'detecting'|'flask'|'static'
+
+  // Auto-detect Flask vs static mode on mount
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 1500);
+    fetch('/api/videos', { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(data => {
+        clearTimeout(timer);
+        const a = makeAPI(null);
+        setApi(a); setMode('flask');
+        setVideos(data);
+        if (data.length) setSelected(data[0].name);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        const path = window.location.pathname;
+        const dir  = path.endsWith('/') ? path : path.slice(0, path.lastIndexOf('/') + 1);
+        const base = dir + 'swing-data/';
+        const a = makeAPI(base);
+        setApi(a); setMode('static');
+        a.listVideos()
+          .then(data => { setVideos(data); if (data.length) setSelected(data[0].name); })
+          .catch(e => setError('Failed to load video list: ' + e.message));
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!selected || !api) return;
+    setSignalData(null); setError(null); setLoading(true);
+    api.getSignal(selected)
+      .then(data => { setSignalData(data); setLoading(false); })
+      .catch(e => { setError('Signal load failed: ' + e.message); setLoading(false); });
+  }, [selected, api]);
+
+  return (
+    <>
+      <div id="header">
+        <h1>Golf Swing Review</h1>
+        {mode === 'static' && (
+          <span className="pill" style={{ background:'#1a3a1a', border:'1px solid #4a7a4a', color:'#a5d6a7', fontSize:'.76rem' }}>
+            static
+          </span>
+        )}
+        <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
+          <label htmlFor="vsel" style={{ color:'#888', fontSize:'.85rem' }}>Video:</label>
+          <select id="vsel" value={selected||''} onChange={e => setSelected(e.target.value)}>
+            {videos.map(v => <option key={v.name} value={v.name}>{v.name}{!v.has_mov?' (no video)':''}</option>)}
+          </select>
+        </div>
+        {(loading || mode === 'detecting') && <div className="spinner" />}
+        {signalData && !loading && (
+          <span style={{ fontSize:'.82rem', color:'#888' }}>
+            {signalData.final_peaks.length} swing(s) detected &nbsp;·&nbsp;
+            {signalData.fps.toFixed(2)} fps &nbsp;·&nbsp; {signalData.total_frames} frames
+          </span>
+        )}
+      </div>
+      <div id="main">
+        {error && <div className="err-box">{error}</div>}
+        {signalData && api && (
+          <>
+            <KeypointsSection  video={selected} sd={signalData} api={api} />
+            <RawSignalSection  sd={signalData} />
+            <SmoothingSection  sd={signalData} />
+            <AnatomySection    sd={signalData} />
+            <ZoomCardsSection  sd={signalData} />
+            <SummarySection    video={selected} sd={signalData} api={api} />
+          </>
+        )}
+        {!signalData && !loading && !error && selected && mode !== 'detecting' && (
+          <p className="expl" style={{ marginTop:'2rem', textAlign:'center' }}>Select a video to begin.</p>
+        )}
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
