@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PipelineCore from './PipelineCore';
 import PipelineCosts from './PipelineCosts';
 import GpuDeepDive from './GpuDeepDive';
+import SwingReview from './SwingReview';
 
 const colors = {
   bg: '#0a0f1a',
@@ -14,9 +15,10 @@ const colors = {
 };
 
 const TABS = [
-  { id: 'core', label: 'Architecture', component: PipelineCore },
-  { id: 'costs', label: 'Costs', component: PipelineCosts },
-  { id: 'gpu', label: 'For the Nerds', component: GpuDeepDive },
+  { id: 'core',   label: 'Architecture',  component: PipelineCore },
+  { id: 'costs',  label: 'Costs',         component: PipelineCosts },
+  { id: 'gpu',    label: 'For the Nerds', component: GpuDeepDive },
+  { id: 'review', label: 'Swing Review',  component: SwingReview },
 ];
 
 export default function App() {
