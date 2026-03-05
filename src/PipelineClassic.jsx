@@ -344,17 +344,36 @@ const PipelineClassic = () => {
       {/* ─── HAND & SCORE FINDER ─── */}
       <CollapsibleCard
         title="Hand & Score Finder"
-        sub="Visualizations, finger predictions & notifications"
+        sub="Hand-raise detection, EfficientNet-B0 finger prediction, visualizations"
         icon="✌️"
         defaultOpen={true}
+        badge="Container"
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
           <ArrowDown label="S3 event (.json)" color={colors.amber} />
           <Node
             type="lambda"
             title="Lambda: post_processing"
-            details="Reads .json, .pkl, .mp4. Generates visualizations & finger predictions."
+            subtitle="3 GB RAM · 4 GB /tmp · 300s timeout · ONNX Runtime"
+            details="Triggered by /detection/*.json. Reads detection JSON + pkl + mp4."
           >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+              <SubStep
+                label="Step 1: Hand Detection"
+                desc="find_score_hands() — search windows between contacts, raised-wrist geometry (above shoulder + elbow), single-hand validation, plateau-based representative frame."
+                color={colors.amber}
+              />
+              <SubStep
+                label="Step 2: Finger Prediction"
+                desc="EfficientNet-B0 ONNX — resolution-adaptive crop scaling (arm-length ratio vs 4K reference). Averages softmax probs across 15 plateau frames for robust count."
+                color={colors.amber}
+              />
+              <SubStep
+                label="Step 3: Visualize & Notify"
+                desc="Skeleton grids (backswing, contact, hand), signal plots, hand crops → S3. DynamoDB update. Pushover with stacked grid images."
+                color={colors.amber}
+              />
+            </div>
             <div style={{
               background: `${colors.amber}08`,
               border: `1px solid ${colors.amber}18`,
@@ -365,11 +384,11 @@ const PipelineClassic = () => {
                 Outputs
               </div>
               {[
-                { key: '/fingers', desc: 'JSON' },
-                { key: '/frames', desc: 'JPG overlays' },
-                { key: '/output', desc: 'Grids, plots' },
-                { key: 'DynamoDB', desc: 'update fingers' },
-                { key: 'Pushover', desc: 'mobile notification' },
+                { key: '/fingers', desc: 'JSON — per-swing predictions + confidence' },
+                { key: '/frames', desc: 'JPG — skeleton overlays per landmark' },
+                { key: '/output', desc: 'PNG — grids, signal plots, hand crops' },
+                { key: 'DynamoDB', desc: 'finger_predictions field' },
+                { key: 'Pushover', desc: 'stacked grids + summary' },
               ].map(item => (
                 <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: colors.amber, flexShrink: 0 }} />
@@ -387,9 +406,10 @@ const PipelineClassic = () => {
       {/* ─── ANALYSIS ─── */}
       <CollapsibleCard
         title="Analysis"
-        sub="On-demand biomechanical analysis"
+        sub="17 biomechanical metrics · SPM · Gemini AI interpretation"
         icon="📊"
         defaultOpen={true}
+        badge="Zip + Layer"
         cardStyleOverride={{
           background: `linear-gradient(135deg, ${colors.purple}08, ${colors.purple}03)`,
           border: `1px solid ${colors.purple}20`,
@@ -408,14 +428,33 @@ const PipelineClassic = () => {
           <Node
             type="lambda"
             title="Lambda: analyze"
-            details={"Requires: golfer, score thresholds, phases.\nGenerates SPM plots + Gemini text analysis."}
-          />
+            subtitle="2 GB RAM · 2 GB /tmp · 300s timeout · Python 3.11"
+            details="Downloads golfer CSV + pkl files from S3. Compares best vs worst swings."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <SubStep
+                label="Step 1: Build Swing Data"
+                desc="CSV with scored labels → SwingData objects. 17 metrics across 3 groups: Rotation (shoulder/hip turn, X-factor), Posture (spine, knee, elbow angles), Linear (sway, hand path)."
+                color={colors.purple}
+              />
+              <SubStep
+                label="Step 2: SPM Analysis"
+                desc="Statistical Parametric Mapping — compares best vs worst swing groups. Resamples to 100 frames, runs t-test (1D) / Hotelling T² (2D). Filters significance by 4% min duration."
+                color={colors.purple}
+              />
+              <SubStep
+                label="Step 3: Gemini + Notify"
+                desc="Sends SPM plots to Gemini (configurable model, default: flash-lite). Gets structured text analysis. Pushover notification with stacked plots + analysis summary."
+                color={colors.purple}
+              />
+            </div>
+          </Node>
           <ArrowDown color={colors.purple} />
           <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '420px', flexWrap: 'wrap' }}>
             {[
-              { type: 's3', title: 'S3: /analysis', sub: 'Plots, Gemini TXT' },
-              { type: 'db', title: 'DynamoDB', sub: 'ANALYSIS item' },
-              { type: 'default', title: 'Pushover', sub: 'Mobile notification' },
+              { type: 's3', title: 'S3: /analysis', sub: 'PNG plots + analysis.txt' },
+              { type: 'db', title: 'DynamoDB', sub: 'ANALYSIS#{timestamp}' },
+              { type: 'default', title: 'Pushover', sub: 'Stacked plots + text' },
             ].map(item => (
               <div key={item.title} style={{ flex: '1 1 120px' }}>
                 <Node type={item.type} title={item.title} subtitle={item.sub} />

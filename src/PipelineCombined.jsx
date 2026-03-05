@@ -346,7 +346,12 @@ const PipelineCombined = () => {
         <StageCard stage={pipelineStages[3]}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <CombinedArrow label="S3 event (.json)" color={colors.amber} />
-            <CombinedNode type="lambda" title="Lambda: post_processing" details="Reads .json, .pkl, .mp4. Generates visualizations & finger predictions.">
+            <CombinedNode type="lambda" title="Lambda: post_processing" subtitle="3 GB RAM · 4 GB /tmp · 300s timeout · ONNX Runtime" details="Triggered by /detection/*.json. Reads detection JSON + pkl + mp4.">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                <SubStep label="Step 1: Hand Detection" desc="find_score_hands() — search windows between contacts, raised-wrist geometry, single-hand validation, plateau-based representative frame." color={colors.amber} />
+                <SubStep label="Step 2: Finger Prediction" desc="EfficientNet-B0 ONNX — resolution-adaptive crop scaling (arm-length ratio). Averages softmax probs across 15 plateau frames." color={colors.amber} />
+                <SubStep label="Step 3: Visualize & Notify" desc="Skeleton grids, signal plots, hand crops → S3. DynamoDB update. Pushover with stacked grid images." color={colors.amber} />
+              </div>
               <div style={{
                 background: `${colors.amber}08`, border: `1px solid ${colors.amber}18`,
                 borderRadius: '8px', padding: '10px 14px',
@@ -355,11 +360,11 @@ const PipelineCombined = () => {
                   Outputs
                 </div>
                 {[
-                  { key: '/fingers', desc: 'JSON' },
-                  { key: '/frames', desc: 'JPG overlays' },
-                  { key: '/output', desc: 'Grids, plots' },
-                  { key: 'DynamoDB', desc: 'update fingers' },
-                  { key: 'Pushover', desc: 'mobile notification' },
+                  { key: '/fingers', desc: 'JSON — per-swing predictions + confidence' },
+                  { key: '/frames', desc: 'JPG — skeleton overlays per landmark' },
+                  { key: '/output', desc: 'PNG — grids, signal plots, hand crops' },
+                  { key: 'DynamoDB', desc: 'finger_predictions field' },
+                  { key: 'Pushover', desc: 'stacked grids + summary' },
                 ].map(item => (
                   <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: colors.amber, flexShrink: 0 }} />
@@ -388,13 +393,19 @@ const PipelineCombined = () => {
             }}>
               Manual invoke
             </div>
-            <CombinedNode type="lambda" title="Lambda: analyze" details={"Requires: golfer, score thresholds, phases.\nGenerates SPM plots + Gemini text analysis."} />
+            <CombinedNode type="lambda" title="Lambda: analyze" subtitle="2 GB RAM · 2 GB /tmp · 300s timeout · Python 3.11" details="Downloads golfer CSV + pkl files from S3. Compares best vs worst swings.">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <SubStep label="Step 1: Build Swing Data" desc="CSV with scored labels → SwingData objects. 17 metrics across 3 groups: Rotation, Posture, Linear." color={colors.purple} />
+                <SubStep label="Step 2: SPM Analysis" desc="Statistical Parametric Mapping — resamples to 100 frames, runs t-test (1D) / Hotelling T² (2D). 4% min duration filter." color={colors.purple} />
+                <SubStep label="Step 3: Gemini + Notify" desc="Sends SPM plots to Gemini (configurable model). Gets structured text analysis. Pushover with stacked plots." color={colors.purple} />
+              </div>
+            </CombinedNode>
             <CombinedArrow color={colors.purple} />
             <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '420px', flexWrap: 'wrap' }}>
               {[
-                { type: 's3', title: 'S3: /analysis', sub: 'Plots, Gemini TXT' },
-                { type: 'db', title: 'DynamoDB', sub: 'ANALYSIS item' },
-                { type: 'default', title: 'Pushover', sub: 'Mobile notification' },
+                { type: 's3', title: 'S3: /analysis', sub: 'PNG plots + analysis.txt' },
+                { type: 'db', title: 'DynamoDB', sub: 'ANALYSIS#{timestamp}' },
+                { type: 'default', title: 'Pushover', sub: 'Stacked plots + text' },
               ].map((item, i) => (
                 <div key={item.title} style={{ flex: '1 1 120px' }}>
                   <CombinedNode type={item.type} title={item.title} subtitle={item.sub} delay={i * 120} />

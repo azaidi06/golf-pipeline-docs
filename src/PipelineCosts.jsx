@@ -22,7 +22,9 @@ const PKL_MB = 5;
 const IA_MB_PER_VIDEO = RAW_MB + PROCESSED_MB;
 const STD_MB_PER_VIDEO = PKL_MB;
 
-const LAMBDA_PER_VIDEO = 0.00006;
+const LAMBDA_DETECT_PER_VIDEO = 0.00006;     // swing_detection: ~13s, 128MB
+const LAMBDA_POST_PER_VIDEO = 0.00042;       // post_processing: ~30s, 3008MB container
+const LAMBDA_PER_VIDEO = LAMBDA_DETECT_PER_VIDEO + LAMBDA_POST_PER_VIDEO;
 const SQS_PER_VIDEO = 0.0000004;
 const DDB_PER_VIDEO = 0.00000125;
 
@@ -319,7 +321,7 @@ const PipelineCosts = () => {
 
   const pieData = [
     { name: 'EC2 Spot', value: costs.dailyEc2, color: colors.accent },
-    { name: 'Lambda', value: costs.dailyLambda || 0.001, color: colors.green },
+    { name: 'Lambda (detect + post)', value: costs.dailyLambda || 0.001, color: colors.green },
     { name: 'SQS', value: costs.dailySqs || 0.001, color: colors.purple },
     { name: 'DynamoDB', value: costs.dailyDdb || 0.001, color: colors.amber },
   ];
@@ -329,6 +331,9 @@ const PipelineCosts = () => {
     { type: 'Processed .mp4', size: `~${PROCESSED_MB} MB`, storageTier: 'Standard-IA', rate: `${S3_IA_GB}/GB/mo`, color: colors.amber },
     { type: 'Keypoints .pkl', size: `~${PKL_MB} MB`, storageTier: 'Standard', rate: `${S3_STANDARD_GB}/GB/mo`, color: colors.green },
     { type: 'Detection .json', size: '<1 KB', storageTier: 'Standard', rate: 'negligible', color: colors.textDim },
+    { type: 'Fingers .json', size: '<5 KB', storageTier: 'Standard', rate: 'negligible', color: colors.textDim },
+    { type: 'Frames (JPG)', size: '~1 MB', storageTier: 'Standard', rate: `${S3_STANDARD_GB}/GB/mo`, color: colors.accent },
+    { type: 'Viz output (PNG)', size: '~2 MB', storageTier: 'Standard', rate: `${S3_STANDARD_GB}/GB/mo`, color: colors.purple },
   ];
 
   return (

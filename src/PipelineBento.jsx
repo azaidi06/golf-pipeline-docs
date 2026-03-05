@@ -214,10 +214,10 @@ const StageTile = ({ stage, span = 1, rowSpan = 1, delay = 0 }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
               {node.steps.map((step, j) => (
                 <div key={j} style={{
-                  background: `${colors.purple}08`, border: `1px solid ${colors.purple}12`,
+                  background: `${svcColor}08`, border: `1px solid ${svcColor}12`,
                   borderRadius: '6px', padding: '8px 10px',
                 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: colors.purple }}>{step.label}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: svcColor }}>{step.label}</div>
                   <div style={{ fontSize: '10px', color: colors.textDim, marginTop: '2px', lineHeight: 1.4 }}>{step.desc}</div>
                 </div>
               ))}
